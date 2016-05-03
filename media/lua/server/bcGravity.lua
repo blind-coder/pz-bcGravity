@@ -119,7 +119,6 @@ bcGravity.dropItemsDown = function(sq, item)
 	sq:getWorldObjects():remove(item);
 	sq:getSpecialObjects():remove(item);
 	sq:getObjects():remove(item);
-	sq:getCell():render();
 	for nz=sq:getZ(),0,-1 do
 		local nsq = getCell():getGridSquare(sq:getX(), sq:getY(), nz);
 		if nz == 0 or (nsq and nsq:getFloor()) then
@@ -165,14 +164,6 @@ bcGravity.itsTheLaw = function(_x, _y, _z)
 			table.insert(additionalSquares, getCell():getGridSquare(_x, _y, _z-1));
 		end
 		destroyedSomething = true;
-	end
-	for i = sq:getWorldObjects():size(),1,-1 do
-		local obj = sq:getSpecialObjects():get(i-1);
-		bcGravity.dropItemsDown(sq, obj);
-	end
-	for i = sq:getSpecialObjects():size(),1,-1 do
-		local obj = sq:getSpecialObjects():get(i-1);
-		bcGravity.dropItemsDown(sq, obj);
 	end
 
 	for i = sq:getStaticMovingObjects():size(),1,-1 do
