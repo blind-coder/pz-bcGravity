@@ -97,18 +97,32 @@ bcGravity.destroyObject = function(obj)
 	-- }}}
 end
 
-bcGravity.dropItemsDown = function(sq, item)
+bcGravity.dropStaticMovingItemsDown = function(sq, item)
 	sq:transmitRemoveItemFromSquare(item);
-	sq:getWorldObjects():remove(item);
-	sq:getObjects():remove(item);
+	sq:getStaticMovingObjects():remove(item);
 	sq:getCell():render();
-	print("dropping an item at "..sq:getX().."x"..sq:getY().."x"..sq:getZ());
 	for nz=sq:getZ(),0,-1 do
 		local nsq = getCell():getGridSquare(sq:getX(), sq:getY(), nz);
 		if nz == 0 or (nsq and nsq:getFloor()) then
-			print("Dropped to level "..nz);
-			print("item: "..bcUtils.dump(item));
-			print("item:getItem: "..bcUtils.dump(item:getItem()));
+			nsq:AddWorldInventoryItem(item:getItem(), 0.0 , 0.0, 0.0);
+			if isClient() then
+				item:transmitCompleteItemToServer();
+			else
+				item:transmitCompleteItemToClients();
+			end
+		end
+	end
+end
+
+bcGravity.dropItemsDown = function(sq, item)
+	sq:transmitRemoveItemFromSquare(item);
+	sq:getWorldObjects():remove(item);
+	sq:getSpecialObjects():remove(item);
+	sq:getObjects():remove(item);
+	sq:getCell():render();
+	for nz=sq:getZ(),0,-1 do
+		local nsq = getCell():getGridSquare(sq:getX(), sq:getY(), nz);
+		if nz == 0 or (nsq and nsq:getFloor()) then
 			nsq:AddWorldInventoryItem(item:getItem(), 0.0 , 0.0, 0.0);
 			if isClient() then
 				item:transmitCompleteItemToServer();
@@ -120,7 +134,6 @@ bcGravity.dropItemsDown = function(sq, item)
 end
 
 bcGravity.itsTheLaw = function(_x, _y, _z)
-	--print("it's the law at ".._x.."x".._y.."x".._z);
 
 	local x;
 	local y;
@@ -134,14 +147,12 @@ bcGravity.itsTheLaw = function(_x, _y, _z)
 	for x=_x-1,_x+1 do
 		for y=_y-1,_y+1 do
 			if bcGravity.sqHasWall(getCell():getGridSquare(x, y, _z-1)) then
-				--print("There's a wall below");
 				return;
 			end
 		end
 	end
 
 	sq = getCell():getGridSquare(_x, _y, _z);
-	--print("Destroying "..sq:getObjects():size().." objects here...");
 	for i = sq:getObjects():size(),1,-1 do
 		local obj = sq:getObjects():get(i-1);
 
@@ -155,6 +166,19 @@ bcGravity.itsTheLaw = function(_x, _y, _z)
 		end
 		destroyedSomething = true;
 	end
+	for i = sq:getWorldObjects():size(),1,-1 do
+		local obj = sq:getSpecialObjects():get(i-1);
+		bcGravity.dropItemsDown(sq, obj);
+	end
+	for i = sq:getSpecialObjects():size(),1,-1 do
+		local obj = sq:getSpecialObjects():get(i-1);
+		bcGravity.dropItemsDown(sq, obj);
+	end
+
+	for i = sq:getStaticMovingObjects():size(),1,-1 do
+		local obj = sq:getStaticMovingObjects():get(i-1);
+		bcGravity.dropStaticMovingItemsDown(sq, obj);
+	end
 
 	for _,sq in pairs(additionalSquares) do
 		bcGravity.obeyGravity(sq);
@@ -164,7 +188,6 @@ end
 bcGravity.obeyGravity = function(sq)
 	local x;
 	local y;
-	--print("obeying gravity at "..sq:getX().."x"..sq:getY().."x"..sq:getZ());
 	for x=sq:getX()-3,sq:getX()+3 do
 		for y=sq:getY()-3,sq:getY()+3 do
 			bcGravity.itsTheLaw(x,y,sq:getZ()+1);
