@@ -159,6 +159,7 @@ bcGravity.itsTheLaw = function(_x, _y, _z)
 			bcGravity.dropItemsDown(sq, obj);
 		else -- not an IsoWorldInventoryObject
 			bcGravity.destroyObject(obj);
+			sq:playSound("breakdoor", true);
 		end
 		if not bcGravity.sqHasWall(sq) then
 			table.insert(additionalSquares, getCell():getGridSquare(_x, _y, _z-1));
