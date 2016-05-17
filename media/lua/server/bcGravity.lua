@@ -1,6 +1,7 @@
 require "TimedActions/ISDestroyStuffAction.lua"
 
 bcGravity = {};
+bcGravity.squares = {};
 bcGravity.ISDestroyStuffActionPerform = ISDestroyStuffAction.perform;
 
 bcGravity.sqHasWall = function(sq)
@@ -133,7 +134,6 @@ bcGravity.dropItemsDown = function(sq, item)
 end
 
 bcGravity.itsTheLaw = function(_x, _y, _z)
-
 	local x;
 	local y;
 	local sq;
@@ -151,7 +151,6 @@ bcGravity.itsTheLaw = function(_x, _y, _z)
 		end
 	end
 
-	sq = getCell():getGridSquare(_x, _y, _z);
 	for i = sq:getObjects():size(),1,-1 do
 		local obj = sq:getObjects():get(i-1);
 
@@ -162,7 +161,7 @@ bcGravity.itsTheLaw = function(_x, _y, _z)
 			sq:playSound("breakdoor", true);
 		end
 		if not bcGravity.sqHasWall(sq) then
-			table.insert(additionalSquares, getCell():getGridSquare(_x, _y, _z-1));
+			table.insert(additionalSquares, getCell():getGridSquare(_x, _y, _z));
 		end
 		destroyedSomething = true;
 	end
@@ -173,27 +172,76 @@ bcGravity.itsTheLaw = function(_x, _y, _z)
 	end
 
 	for _,sq in pairs(additionalSquares) do
-		bcGravity.obeyGravity(sq);
-	end
-end
-
-bcGravity.obeyGravity = function(sq)
-	local x;
-	local y;
-	for x=sq:getX()-3,sq:getX()+3 do
-		for y=sq:getY()-3,sq:getY()+3 do
-			bcGravity.itsTheLaw(x,y,sq:getZ()+1);
+		for x=sq:getX()-1,sq:getX()+1 do
+			for y=sq:getY()-1,sq:getY()+1 do
+				bcGravity.checkSquare(x, y, sq:getZ(), true);
+				if sq:getZ() < 7 then
+					bcGravity.checkSquare(x, y, sq:getZ()+1, true);
+				end
+			end
 		end
 	end
 end
 
+bcGravity.obeyGravity = function()
+	local done = true;
+	local x;
+	local y;
+	local z;
+
+	while not done do
+		done = true;
+		for x,_ in pairs(bcGravity.squares) do
+			for y,_ in pairs(bcGravity.squares[x]) do
+				for z,_ in pairs(bcGravity.squares[x][y]) do
+					if not bcGravity.squares[x][y][z] then
+						bcGravity.itsTheLaw(x, y, z);
+						bcGravity.squares[x][y][z] = true;
+						done = false;
+					end
+				end
+			end
+		end
+	end
+end
+
+bcGravity.checkSquare = function(x, y, z, force)
+	if not bcGravity.squares[x] then
+		bcGravity.squares[x] = {};
+	end
+	if not bcGravity.squares[x][y] then
+		bcGravity.squares[x][y] = {};
+	end
+	if bcGravity.squares[x][y][z] and not force then
+		return;
+	end
+
+	bcGravity.squares[x][y][z] = false;
+end
+
 function ISDestroyStuffAction.perform(self)
+	local x;
+	local y;
 	local sq = self.item:getSquare();
 	-- call original function
 	bcGravity.ISDestroyStuffActionPerform(self)
+	bcGravity.squares = {};
 
-	if bcGravity.sqHasWall(sq) then return end
-	if sq:getZ() >= 7 then return end
+	if sq:getZ() < 7 then
+		if not bcGravity.sqHasWall(sq) then
+			for x=sq:getX()-3,sq:getX()+3 do
+				for y=sq:getY()-3,sq:getY()+3 do
+					bcGravity.checkSquare(x, y, sq:getZ()+1);
+				end
+			end
+		end
+	end
 
-	bcGravity.obeyGravity(sq);
+	for x=sq:getX()-3,sq:getX()+3 do
+		for y=sq:getY()-3,sq:getY()+3 do
+			bcGravity.checkSquare(x, y, sq:getZ());
+		end
+	end
+
+	bcGravity.obeyGravity();
 end
