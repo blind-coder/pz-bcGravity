@@ -11,8 +11,8 @@ bcGravity.sqHasWall = function(sq)
 	return false;
 end
 
-bcGravity.destroyObject = function(obj)
-	-- CopyPasted from ISDestroyStuffAction.perform {{{
+bcGravity.destroyObject = function(obj) -- {{{
+	-- CopyPasted from ISDestroyStuffAction.perform
 
 	-- we add the items contained inside the item we destroyed to put them randomly on the ground
 	for i=1,obj:getContainerCount() do
@@ -95,10 +95,10 @@ bcGravity.destroyObject = function(obj)
 			obj:getSquare():RemoveTileObject(obj)
 		end
 	end
-	-- }}}
 end
+-- }}}
 
-bcGravity.dropStaticMovingItemsDown = function(sq, item)
+bcGravity.dropStaticMovingItemsDown = function(sq, item)--{{{
 	sq:transmitRemoveItemFromSquare(item);
 	sq:getStaticMovingObjects():remove(item);
 	sq:getCell():render();
@@ -114,8 +114,8 @@ bcGravity.dropStaticMovingItemsDown = function(sq, item)
 		end
 	end
 end
-
-bcGravity.dropItemsDown = function(sq, item)
+--}}}
+bcGravity.dropItemsDown = function(sq, item)--{{{
 	sq:transmitRemoveItemFromSquare(item);
 	sq:getWorldObjects():remove(item);
 	sq:getSpecialObjects():remove(item);
@@ -132,8 +132,10 @@ bcGravity.dropItemsDown = function(sq, item)
 		end
 	end
 end
+--}}}
+bcGravity.itsTheLaw = function(_x, _y, _z)--{{{
+	if _z < 1 then return; end
 
-bcGravity.itsTheLaw = function(_x, _y, _z)
 	local x;
 	local y;
 	local sq;
@@ -182,18 +184,19 @@ bcGravity.itsTheLaw = function(_x, _y, _z)
 		end
 	end
 end
-
-bcGravity.obeyGravity = function()
-	local done = true;
+--}}}
+bcGravity.obeyGravity = function()--{{{
+	local done = false;
 	local x;
 	local y;
 	local z;
 
 	while not done do
 		done = true;
-		for x,_ in pairs(bcGravity.squares) do
-			for y,_ in pairs(bcGravity.squares[x]) do
-				for z,_ in pairs(bcGravity.squares[x][y]) do
+		local newSquares = bcUtils.cloneTable(bcGravity.squares);
+		for x,_ in pairs(newSquares) do
+			for y,_ in pairs(newSquares[x]) do
+				for z,_ in pairs(newSquares[x][y]) do
 					if not bcGravity.squares[x][y][z] then
 						bcGravity.itsTheLaw(x, y, z);
 						bcGravity.squares[x][y][z] = true;
@@ -204,8 +207,8 @@ bcGravity.obeyGravity = function()
 		end
 	end
 end
-
-bcGravity.checkSquare = function(x, y, z, force)
+--}}}
+bcGravity.checkSquare = function(x, y, z, force)--{{{
 	if not bcGravity.squares[x] then
 		bcGravity.squares[x] = {};
 	end
@@ -218,13 +221,16 @@ bcGravity.checkSquare = function(x, y, z, force)
 
 	bcGravity.squares[x][y][z] = false;
 end
-
-function ISDestroyStuffAction.perform(self)
+--}}}
+function ISDestroyStuffAction.perform(self)--{{{
 	local x;
 	local y;
 	local sq = self.item:getSquare();
+	local hadWall = bcGravity.sqHasWall(sq);
 	-- call original function
 	bcGravity.ISDestroyStuffActionPerform(self)
+	if not hadWall then return end;
+
 	bcGravity.squares = {};
 
 	if sq:getZ() < 7 then
@@ -245,3 +251,4 @@ function ISDestroyStuffAction.perform(self)
 
 	bcGravity.obeyGravity();
 end
+--}}}
