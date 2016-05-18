@@ -227,6 +227,8 @@ function ISDestroyStuffAction.perform(self)--{{{
 	local y;
 	local sq = self.item:getSquare();
 	local hadWall = bcGravity.sqHasWall(sq);
+	local stairs = buildUtil.getStairObjects(self.item);
+	hadWall = hadWall or (#stairs > 0);
 	-- call original function
 	bcGravity.ISDestroyStuffActionPerform(self)
 	if not hadWall then return end;
