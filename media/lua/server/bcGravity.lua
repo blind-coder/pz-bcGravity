@@ -231,11 +231,10 @@ function ISDestroyStuffAction.perform(self)--{{{
 	hadWall = hadWall or (#stairs > 0);
 	-- call original function
 	bcGravity.ISDestroyStuffActionPerform(self)
-	if not hadWall then return end;
 
 	bcGravity.squares = {};
 
-	if sq:getZ() < 7 then
+	if hadWall and sq:getZ() < 7 then
 		if not bcGravity.sqHasWall(sq) then
 			for x=sq:getX()-3,sq:getX()+3 do
 				for y=sq:getY()-3,sq:getY()+3 do
