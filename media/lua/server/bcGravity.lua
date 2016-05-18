@@ -4,13 +4,13 @@ bcGravity = {};
 bcGravity.squares = {};
 bcGravity.ISDestroyStuffActionPerform = ISDestroyStuffAction.perform;
 
-bcGravity.sqHasWall = function(sq)
+bcGravity.sqHasWall = function(sq)--{{{
 	if not sq then return false; end
 	if sq:getWall(false) then return true; end
 	if sq:getWall(true)  then return true; end
 	return false;
 end
-
+--}}}
 bcGravity.destroyObject = function(obj) -- {{{
 	-- CopyPasted from ISDestroyStuffAction.perform
 
