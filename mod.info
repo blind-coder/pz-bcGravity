@@ -3,6 +3,6 @@ poster=empty.png
 description=Obey gravity. It's the law.
 id=bcGravity
 
-modversion=0.1.0
+modversion=0.2.0
 pzversion=34.24
 versionurl=https://raw.githubusercontent.com/blind-coder/pz-bcGravity/master/mod.info
