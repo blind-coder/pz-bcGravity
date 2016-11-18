@@ -1,5 +1,6 @@
 -- require "TimedActions/ISDestroyStuffAction.lua"
 require "BuildingObjects/ISWoodenFloor.lua"
+require "bcUtils"
 
 bcGravity = {};
 bcGravity.preventLoop = false;
@@ -192,6 +193,18 @@ bcGravity.itsTheLaw = function(_x, _y, _z)--{{{
 	for i = sq:getStaticMovingObjects():size(),1,-1 do
 		local obj = sq:getStaticMovingObjects():get(i-1);
 		bcGravity.dropStaticMovingItemsDown(sq, obj);
+	end
+
+	if destroyedSomething then
+		local moving = getCell():getGridSquare(_x, _y, _z-1);
+		if not moving then return end
+		moving = moving:getMovingObjects();
+		for i = moving:size(),1,-1 do
+			local ent = moving:get(i-1);
+			if ent then
+				ent:Hit(InventoryItemFactory.CreateItem("Base.Axe"), getCell():getFakeZombieForHit(), 15 + ZombRand(15), false, 1.0F);
+			end
+		end
 	end
 
 	for _,sq in pairs(additionalSquares) do
