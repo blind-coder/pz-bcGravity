@@ -269,7 +269,8 @@ bcGravity.OnTileRemoved = function(obj) -- {{{
 		return;
 	end
 
-	local hadWall = obj:getSprite():getProperties():Is(IsoFlagType.cutN)
+	local props = obj:getSprite():getProperties();
+	local hadWall = props:Is(IsoFlagType.cutN) or props:Is(IsoFlagType.cutW) or props:Is("WallW") or props:Is("WallN") or props:Is("WallNW");
 
 	bcGravity.squares = {};
 
