@@ -2,6 +2,7 @@ name=Gravity
 poster=empty.png
 description=Obey gravity. It's the law.
 id=bcGravity
+require=bcUtils
 
 modversion=0.2.0
 pzversion=34.24
