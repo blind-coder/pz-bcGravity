@@ -202,7 +202,11 @@ bcGravity.itsTheLaw = function(_x, _y, _z)--{{{
 		for i = moving:size(),1,-1 do
 			local ent = moving:get(i-1);
 			if ent then
-				ent:Hit(InventoryItemFactory.CreateItem("Base.Axe"), getCell():getFakeZombieForHit(), 15 + ZombRand(15), false, 1.0F);
+				local hits = 2+ZombRand(3);
+				local hploss = 15 + ZombRand(15);
+				for i=0,hits do
+					ent:Hit(InventoryItemFactory.CreateItem("Base.Axe"), getCell():getFakeZombieForHit(), math.ceil(hploss / hits), false, 1.0F);
+				end
 			end
 		end
 	end
