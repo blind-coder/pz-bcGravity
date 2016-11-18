@@ -262,8 +262,6 @@ bcGravity.OnTileRemoved = function(obj) -- {{{
 	if bcGravity.preventLoop then return end
 	bcGravity.preventLoop = true;
 
-	print("obj: "..tostring(obj));
-	print("obj:getSquare(): "..tostring(obj:getSquare()));
 	local sq = obj:getSquare();
 	if not sq then
 		print("error: obj:getSquare() is nil!");
