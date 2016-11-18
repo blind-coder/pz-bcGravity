@@ -1,6 +1,7 @@
-require "TimedActions/ISDestroyStuffAction.lua"
+-- require "TimedActions/ISDestroyStuffAction.lua"
 
 bcGravity = {};
+bcGravity.preventLoop = false;
 bcGravity.squares = {};
 bcGravity.ISDestroyStuffActionPerform = ISDestroyStuffAction.perform;
 
@@ -134,6 +135,7 @@ bcGravity.dropItemsDown = function(sq, item)--{{{
 end
 --}}}
 bcGravity.itsTheLaw = function(_x, _y, _z)--{{{
+	-- TODO differentiate between player-built and prefabbed structures
 	if _z < 1 then return; end
 
 	local x;
@@ -145,8 +147,8 @@ bcGravity.itsTheLaw = function(_x, _y, _z)--{{{
 	sq = getCell():getGridSquare(_x, _y, _z);
 	if not sq then return end;
 
-	for x=_x-1,_x+1 do
-		for y=_y-1,_y+1 do
+	for x=_x-3,_x+3 do
+		for y=_y-3,_y+3 do
 			if bcGravity.sqHasWall(getCell():getGridSquare(x, y, _z-1)) then
 				return;
 			end
@@ -155,17 +157,18 @@ bcGravity.itsTheLaw = function(_x, _y, _z)--{{{
 
 	for i = sq:getObjects():size(),1,-1 do
 		local obj = sq:getObjects():get(i-1);
+		-- local isFloor = obj:getSprite():getProperties():Is(IsoFlagType.solidFloor);
 
 		if instanceof(obj, "IsoWorldInventoryObject") then
 			bcGravity.dropItemsDown(sq, obj);
 		else -- not an IsoWorldInventoryObject
+			destroyedSomething = true;
 			bcGravity.destroyObject(obj);
 			sq:playSound("breakdoor", true);
 		end
-		if not bcGravity.sqHasWall(sq) then
+		if destroyedSomething and not bcGravity.sqHasWall(sq) then
 			table.insert(additionalSquares, getCell():getGridSquare(_x, _y, _z));
 		end
-		destroyedSomething = true;
 	end
 
 	for i = sq:getStaticMovingObjects():size(),1,-1 do
@@ -174,8 +177,8 @@ bcGravity.itsTheLaw = function(_x, _y, _z)--{{{
 	end
 
 	for _,sq in pairs(additionalSquares) do
-		for x=sq:getX()-1,sq:getX()+1 do
-			for y=sq:getY()-1,sq:getY()+1 do
+		for x=sq:getX()-3,sq:getX()+3 do
+			for y=sq:getY()-3,sq:getY()+3 do
 				bcGravity.checkSquare(x, y, sq:getZ(), true);
 				if sq:getZ() < 7 then
 					bcGravity.checkSquare(x, y, sq:getZ()+1, true);
@@ -185,6 +188,7 @@ bcGravity.itsTheLaw = function(_x, _y, _z)--{{{
 	end
 end
 --}}}
+
 bcGravity.obeyGravity = function()--{{{
 	local done = false;
 	local x;
@@ -222,7 +226,49 @@ bcGravity.checkSquare = function(x, y, z, force)--{{{
 	bcGravity.squares[x][y][z] = false;
 end
 --}}}
+
+bcGravity.OnTileRemoved = function(obj) -- {{{
+	if bcGravity.preventLoop then return end
+	bcGravity.preventLoop = true;
+
+	print("obj: "..tostring(obj));
+	print("obj:getSquare(): "..tostring(obj:getSquare()));
+	local sq = obj:getSquare();
+	if not sq then
+		print("error: obj:getSquare() is nil!");
+		bcGravity.preventLoop = false;
+		return;
+	end
+
+	local hadWall = obj:getSprite():getProperties():Is(IsoFlagType.cutN)
+
+	bcGravity.squares = {};
+
+	if hadWall and sq:getZ() < 7 then
+		for x=sq:getX()-3,sq:getX()+3 do
+			for y=sq:getY()-3,sq:getY()+3 do
+				bcGravity.checkSquare(x, y, sq:getZ()+1);
+			end
+		end
+	end
+
+	for x=sq:getX()-3,sq:getX()+3 do
+		for y=sq:getY()-3,sq:getY()+3 do
+			bcGravity.checkSquare(x, y, sq:getZ());
+		end
+	end
+
+	bcGravity.obeyGravity();
+	
+	bcGravity.preventLoop = false;
+end
+-- }}}
+
+--[[
 function ISDestroyStuffAction.perform(self)--{{{
+	if bcGravity.preventLoop then return end
+	bcGravity.preventLoop = true;
+
 	local x;
 	local y;
 	local sq = self.item:getSquare();
@@ -251,5 +297,11 @@ function ISDestroyStuffAction.perform(self)--{{{
 	end
 
 	bcGravity.obeyGravity();
+	
+	bcGravity.preventLoop = false;
 end
 --}}}
+--]]
+
+triggerEvent("OnTileRemoved", {});
+Events.OnTileRemoved.Add(bcGravity.OnTileRemoved);
