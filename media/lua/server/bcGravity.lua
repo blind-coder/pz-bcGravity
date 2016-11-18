@@ -1,9 +1,27 @@
 -- require "TimedActions/ISDestroyStuffAction.lua"
+require "BuildingObjects/ISWoodenFloor.lua"
 
 bcGravity = {};
 bcGravity.preventLoop = false;
 bcGravity.squares = {};
 bcGravity.ISDestroyStuffActionPerform = ISDestroyStuffAction.perform;
+
+bcGravity.ISWFisValid = ISWoodenFloor.isValid; -- {{{
+ISWoodenFloor.isValid = function(self, square)
+	local _x = square:getX();
+	local _y = square:getY();
+	local _z = square:getZ();
+	if not bcGravity.ISWFisValid(self, square) then return false end;
+	for x=_x-3,_x+3 do
+		for y=_y-3,_y+3 do
+			if bcGravity.sqHasWall(getCell():getGridSquare(x, y, _z-1)) then
+				return true;
+			end
+		end
+	end
+	return false;
+end
+-- }}}
 
 bcGravity.sqHasWall = function(sq)--{{{
 	if not sq then return false; end
