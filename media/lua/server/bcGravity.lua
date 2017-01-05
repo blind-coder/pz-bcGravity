@@ -3,6 +3,7 @@ require "BuildingObjects/ISWoodenFloor.lua"
 require "bcUtils"
 
 bcGravity = {};
+bcGravity.radius = 1;
 bcGravity.preventLoop = false;
 bcGravity.squares = {};
 bcGravity.ISDestroyStuffActionPerform = ISDestroyStuffAction.perform;
@@ -119,7 +120,14 @@ end
 -- }}}
 
 bcGravity.dropStaticMovingItemsDown = function(sq, item)--{{{
-	sq:transmitRemoveItemFromSquare(item);
+	local id = -1;
+	if instanceof(item, "InventoryItem") then
+		id = item:getID();
+		item = item:getWorldItem();
+	end
+	if not item then return end;
+
+	sq:transmitRemoveItemFromSquare(item:getItem());
 	sq:getStaticMovingObjects():remove(item);
 	sq:getCell():render();
 	for nz=sq:getZ(),0,-1 do
@@ -131,11 +139,19 @@ bcGravity.dropStaticMovingItemsDown = function(sq, item)--{{{
 			else
 				item:transmitCompleteItemToClients();
 			end
+			return;
 		end
 	end
 end
 --}}}
 bcGravity.dropItemsDown = function(sq, item)--{{{
+	local id = -1;
+	if instanceof(item, "InventoryItem") then
+		id = item:getID();
+		item = item:getWorldItem();
+	end
+	if not item then return end;
+
 	sq:transmitRemoveItemFromSquare(item);
 	sq:getWorldObjects():remove(item);
 	sq:getSpecialObjects():remove(item);
@@ -149,6 +165,7 @@ bcGravity.dropItemsDown = function(sq, item)--{{{
 			else
 				item:transmitCompleteItemToClients();
 			end
+			return;
 		end
 	end
 end
@@ -166,8 +183,8 @@ bcGravity.itsTheLaw = function(_x, _y, _z)--{{{
 	sq = getCell():getGridSquare(_x, _y, _z);
 	if not sq then return end;
 
-	for x=_x-3,_x+3 do
-		for y=_y-3,_y+3 do
+	for x=_x-bcGravity.radius,_x+bcGravity.radius do
+		for y=_y-bcGravity.radius,_y+bcGravity.radius do
 			if bcGravity.sqHasWall(getCell():getGridSquare(x, y, _z-1)) then
 				return;
 			end
@@ -212,8 +229,8 @@ bcGravity.itsTheLaw = function(_x, _y, _z)--{{{
 	end
 
 	for _,sq in pairs(additionalSquares) do
-		for x=sq:getX()-3,sq:getX()+3 do
-			for y=sq:getY()-3,sq:getY()+3 do
+		for x=sq:getX()-bcGravity.radius,sq:getX()+bcGravity.radius do
+			for y=sq:getY()-bcGravity.radius,sq:getY()+bcGravity.radius do
 				bcGravity.checkSquare(x, y, sq:getZ(), true);
 				if sq:getZ() < 7 then
 					bcGravity.checkSquare(x, y, sq:getZ()+1, true);
@@ -279,15 +296,15 @@ bcGravity.OnTileRemoved = function(obj) -- {{{
 	bcGravity.squares = {};
 
 	if hadWall and sq:getZ() < 7 then
-		for x=sq:getX()-3,sq:getX()+3 do
-			for y=sq:getY()-3,sq:getY()+3 do
+		for x=sq:getX()-bcGravity.radius,sq:getX()+bcGravity.radius do
+			for y=sq:getY()-bcGravity.radius,sq:getY()+bcGravity.radius do
 				bcGravity.checkSquare(x, y, sq:getZ()+1);
 			end
 		end
 	end
 
-	for x=sq:getX()-3,sq:getX()+3 do
-		for y=sq:getY()-3,sq:getY()+3 do
+	for x=sq:getX()-bcGravity.radius,sq:getX()+bcGravity.radius do
+		for y=sq:getY()-bcGravity.radius,sq:getY()+bcGravity.radius do
 			bcGravity.checkSquare(x, y, sq:getZ());
 		end
 	end
@@ -297,45 +314,6 @@ bcGravity.OnTileRemoved = function(obj) -- {{{
 	bcGravity.preventLoop = false;
 end
 -- }}}
-
---[[
-function ISDestroyStuffAction.perform(self)--{{{
-	if bcGravity.preventLoop then return end
-	bcGravity.preventLoop = true;
-
-	local x;
-	local y;
-	local sq = self.item:getSquare();
-	local hadWall = bcGravity.sqHasWall(sq);
-	local stairs = buildUtil.getStairObjects(self.item);
-	hadWall = hadWall or (#stairs > 0);
-	-- call original function
-	bcGravity.ISDestroyStuffActionPerform(self)
-
-	bcGravity.squares = {};
-
-	if hadWall and sq:getZ() < 7 then
-		if not bcGravity.sqHasWall(sq) then
-			for x=sq:getX()-3,sq:getX()+3 do
-				for y=sq:getY()-3,sq:getY()+3 do
-					bcGravity.checkSquare(x, y, sq:getZ()+1);
-				end
-			end
-		end
-	end
-
-	for x=sq:getX()-3,sq:getX()+3 do
-		for y=sq:getY()-3,sq:getY()+3 do
-			bcGravity.checkSquare(x, y, sq:getZ());
-		end
-	end
-
-	bcGravity.obeyGravity();
-	
-	bcGravity.preventLoop = false;
-end
---}}}
---]]
 
 triggerEvent("OnTileRemoved", {});
 Events.OnTileRemoved.Add(bcGravity.OnTileRemoved);
