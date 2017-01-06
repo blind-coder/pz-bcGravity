@@ -1,9 +1,9 @@
 name=Gravity
-poster=empty.png
-description=Obey gravity. It's the law.
+poster=obeygravity.png
+description=Obey gravity. It's the law. <LINE> This mod lets structures come crashing down when their support structures are removed. All structures must have a wall in a 5x5 area below or get destroyed. Also prevents players from building floors more than 3 tiles away from any wall.
 id=bcGravity
 require=bcUtils
 
-modversion=0.2.0
+modversion=0.1.0
 pzversion=34.24
 versionurl=https://raw.githubusercontent.com/blind-coder/pz-bcGravity/master/mod.info
