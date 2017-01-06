@@ -3,7 +3,7 @@ require "BuildingObjects/ISWoodenFloor.lua"
 require "bcUtils"
 
 bcGravity = {};
-bcGravity.radius = 1;
+bcGravity.radius = 2;
 bcGravity.preventLoop = false;
 bcGravity.squares = {};
 bcGravity.ISDestroyStuffActionPerform = ISDestroyStuffAction.perform;
