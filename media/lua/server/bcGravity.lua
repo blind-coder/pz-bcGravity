@@ -227,7 +227,20 @@ bcGravity.itsTheLaw = function(_x, _y, _z)--{{{
 				local hits = 2+ZombRand(3);
 				local hploss = 15 + ZombRand(15);
 				for i=0,hits do
-					ent:Hit(InventoryItemFactory.CreateItem("Base.Axe"), getCell():getFakeZombieForHit(), math.ceil(hploss / hits), false, 1.0F);
+					if instanceof(ent, "IsoZombie") then
+						if ZombRand(100) < 80 then
+							ent:Kill(nil);
+						else
+							local health = ent:getHealth() - ((2 + ZombRand(10)) / 10.0);
+							if health <= 0 then
+								ent:setHealth(health);
+							else
+								ent:Kill(nil);
+							end
+						end
+					else
+						ent:Hit(InventoryItemFactory.CreateItem("Base.Axe"), getCell():getFakeZombieForHit(), math.ceil(hploss / hits), false, 1.0F);
+					end
 				end
 			end
 		end
