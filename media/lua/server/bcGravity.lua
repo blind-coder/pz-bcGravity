@@ -13,6 +13,11 @@ ISWoodenFloor.isValid = function(self, square)
 	local _x = square:getX();
 	local _y = square:getY();
 	local _z = square:getZ();
+
+	if _z < 1 then
+		return true;
+	end
+
 	if not bcGravity.ISWFisValid(self, square) then return false end;
 	for x=_x-3,_x+3 do
 		for y=_y-3,_y+3 do
