@@ -4,6 +4,6 @@ description=Obey gravity. It's the law. <LINE> This mod lets structures come cra
 id=bcGravity
 require=bcUtils
 
-modversion=0.2.0
+modversion=0.3.0
 pzversion=34.24
 versionurl=https://raw.githubusercontent.com/blind-coder/pz-bcGravity/master/mod.info
