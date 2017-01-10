@@ -15,14 +15,14 @@ ISWoodenFloor.isValid = function(self, square)
 	local _z = square:getZ();
 
 	if _z < 1 then
-		return true;
+		return bcGravity.ISWFisValid(self, square);
 	end
 
 	if not bcGravity.ISWFisValid(self, square) then return false end;
 	for x=_x-3,_x+3 do
 		for y=_y-3,_y+3 do
 			if bcGravity.sqHasWall(getCell():getGridSquare(x, y, _z-1)) then
-				return true;
+				return bcGravity.ISWFisValid(self, square);
 			end
 		end
 	end
