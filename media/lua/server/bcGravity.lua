@@ -233,9 +233,10 @@ bcGravity.itsTheLaw = function(_x, _y, _z)--{{{
 						else
 							local health = ent:getHealth() - ((2 + ZombRand(10)) / 10.0);
 							if health <= 0 then
-								ent:setHealth(health);
-							else
 								ent:Kill(nil);
+							else
+								ent:setHealth(health);
+								-- TODO ent:changeState(StaggerBackState.instance());
 							end
 						end
 					else
