@@ -6,7 +6,6 @@ bcGravity = {};
 bcGravity.radius = 2;
 bcGravity.preventLoop = false;
 bcGravity.squares = {};
-bcGravity.ISDestroyStuffActionPerform = ISDestroyStuffAction.perform;
 
 bcGravity.ISWFisValid = ISWoodenFloor.isValid; -- {{{
 ISWoodenFloor.isValid = function(self, square)
