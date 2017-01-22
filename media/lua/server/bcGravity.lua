@@ -96,30 +96,17 @@ bcGravity.destroyObject = function(obj) -- {{{
 	-- When you destroy with an axe, you get "need:XXX" materials back.
 	RainCollectorBarrel.OnDestroyIsoThumpable(obj, nil)
 	TrapSystem.OnDestroyIsoThumpable(obj, nil)
-	if isClient() then
-		local sq = obj:getSquare()
-		local args = { x = sq:getX(), y = sq:getY(), z = sq:getZ(), index = obj:getObjectIndex() }
-		sendClientCommand(self.character, 'object', 'OnDestroyIsoThumpable', args)
-	end
 
 	-- Destroy all 3 stair objects (and sometimes the floor at the top)
 	local stairObjects = buildUtil.getStairObjects(obj)
 	if #stairObjects > 0 then
 		for i=1,#stairObjects do
-			if isClient() then
-				sledgeDestroy(stairObjects[i]);
-			else
-				stairObjects[i]:getSquare():transmitRemoveItemFromSquare(stairObjects[i])
-				stairObjects[i]:getSquare():RemoveTileObject(stairObjects[i])
-			end
+			stairObjects[i]:getSquare():transmitRemoveItemFromSquare(stairObjects[i])
+			stairObjects[i]:getSquare():RemoveTileObject(stairObjects[i])
 		end
 	else
-		if isClient() then
-			sledgeDestroy(obj);
-		else
-			obj:getSquare():transmitRemoveItemFromSquare(obj)
-			obj:getSquare():RemoveTileObject(obj)
-		end
+		obj:getSquare():transmitRemoveItemFromSquare(obj)
+		obj:getSquare():RemoveTileObject(obj)
 	end
 end
 -- }}}
