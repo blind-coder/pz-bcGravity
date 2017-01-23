@@ -125,17 +125,14 @@ bcGravity.dropStaticMovingItemsDown = function(sq, item)--{{{
 		local nsq = getCell():getGridSquare(sq:getX(), sq:getY(), nz);
 		if nz == 0 or (nsq and nsq:getFloor()) then
 			nsq:AddWorldInventoryItem(item:getItem(), 0.0 , 0.0, 0.0);
-			if isClient() then
-				item:transmitCompleteItemToServer();
-			else
-				item:transmitCompleteItemToClients();
-			end
+			item:transmitCompleteItemToClients();
 			return;
 		end
 	end
 end
 --}}}
 bcGravity.dropItemsDown = function(sq, item)--{{{
+	-- print("bcGravity.dropItemsDown: dropping on "..sq:getX().."x"..sq:getY().."x"..sq:getZ());
 	local id = -1;
 	if instanceof(item, "InventoryItem") then
 		id = item:getID();
@@ -151,11 +148,8 @@ bcGravity.dropItemsDown = function(sq, item)--{{{
 		local nsq = getCell():getGridSquare(sq:getX(), sq:getY(), nz);
 		if nz == 0 or (nsq and nsq:getFloor()) then
 			nsq:AddWorldInventoryItem(item:getItem(), 0.0 , 0.0, 0.0);
-			if isClient() then
-				item:transmitCompleteItemToServer();
-			else
-				item:transmitCompleteItemToClients();
-			end
+			item:transmitCompleteItemToClients();
+			-- print("bcGravity.dropItemsDown: dropped "..tostring(item).." to level "..tostring(nz));
 			return;
 		end
 	end
@@ -285,6 +279,10 @@ end
 --}}}
 
 bcGravity.OnTileRemoved = function(obj) -- {{{
+	if isClient() then 
+		-- print("bcGravity.OnTileRemoved: This is on client, not running")
+	end
+
 	if bcGravity.preventLoop then return end
 	bcGravity.preventLoop = true;
 
