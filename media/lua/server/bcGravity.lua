@@ -279,11 +279,6 @@ end
 --}}}
 
 bcGravity.OnTileRemoved = function(obj) -- {{{
-	if isClient() then 
-		-- print("bcGravity.OnTileRemoved: This is on client, not running")
-		return
-	end
-
 	if bcGravity.preventLoop then return end
 	bcGravity.preventLoop = true;
 
