@@ -42,9 +42,15 @@ bcGravity.destroyObject = function(obj) -- {{{
 	-- we add the items contained inside the item we destroyed to put them randomly on the ground
 	for i=1,obj:getContainerCount() do
 		local container = obj:getContainerByIndex(i-1)
+		local sq = obj:getSquare();
 		for j=1,container:getItems():size() do
-			local item = obj:getSquare():AddWorldInventoryItem(container:getItems():get(j-1), 0.0, 0.0, 0.0)
-			bcGravity.dropItemsDown(obj:getSquare(), item);
+			local item = sq:AddWorldInventoryItem(container:getItems():get(j-1), 0.0, 0.0, 0.0)
+			bcGravity.dropItemsDown(sq, item);
+			local args = {};
+			args.x = sq:getX();
+			args.y = sq:getY();
+			args.z = sq:getZ();
+			sendServerCommand("bcGravity", "dropItemsDown", args);
 		end
 	end
 
@@ -119,6 +125,7 @@ bcGravity.dropStaticMovingItemsDown = function(sq, item)--{{{
 	if not item then return end;
 
 	sq:transmitRemoveItemFromSquare(item:getItem());
+	sq:RemoveTileObject(item);
 	sq:getStaticMovingObjects():remove(item);
 	sq:getCell():render();
 	for nz=sq:getZ(),0,-1 do
@@ -131,6 +138,7 @@ bcGravity.dropStaticMovingItemsDown = function(sq, item)--{{{
 	end
 end
 --}}}
+
 bcGravity.dropItemsDown = function(sq, item)--{{{
 	-- print("bcGravity.dropItemsDown: dropping on "..sq:getX().."x"..sq:getY().."x"..sq:getZ());
 	local id = -1;
@@ -141,6 +149,7 @@ bcGravity.dropItemsDown = function(sq, item)--{{{
 	if not item then return end;
 
 	sq:transmitRemoveItemFromSquare(item);
+	sq:RemoveTileObject(item);
 	sq:getWorldObjects():remove(item);
 	sq:getSpecialObjects():remove(item);
 	sq:getObjects():remove(item);
@@ -163,6 +172,7 @@ bcGravity.itsTheLaw = function(_x, _y, _z)--{{{
 	local y;
 	local sq;
 	local destroyedSomething = false;
+	local droppedSomething = false;
 	local additionalSquares = {};
 
 	sq = getCell():getGridSquare(_x, _y, _z);
@@ -182,6 +192,7 @@ bcGravity.itsTheLaw = function(_x, _y, _z)--{{{
 
 		if instanceof(obj, "IsoWorldInventoryObject") then
 			bcGravity.dropItemsDown(sq, obj);
+			droppedSomething = true;
 		else -- not an IsoWorldInventoryObject
 			destroyedSomething = true;
 			bcGravity.destroyObject(obj);
@@ -191,19 +202,37 @@ bcGravity.itsTheLaw = function(_x, _y, _z)--{{{
 			table.insert(additionalSquares, getCell():getGridSquare(_x, _y, _z));
 		end
 	end
+	if droppedSomething then
+		local args = {};
+		args.x = sq:getX();
+		args.y = sq:getY();
+		args.z = sq:getZ();
+		sendServerCommand("bcGravity", "dropItemsDown", args);
+	end
 
+	droppedSomething = false;
 	for i = sq:getStaticMovingObjects():size(),1,-1 do
 		local obj = sq:getStaticMovingObjects():get(i-1);
 		bcGravity.dropStaticMovingItemsDown(sq, obj);
+		droppedSomething = true;
+	end
+	if droppedSomething then
+		local args = {};
+		args.x = sq:getX();
+		args.y = sq:getY();
+		args.z = sq:getZ();
+		sendServerCommand("bcGravity", "dropStaticMovingItemsDown", args);
 	end
 
 	if destroyedSomething then
 		local moving = getCell():getGridSquare(_x, _y, _z-1);
 		if not moving then return end
 		moving = moving:getMovingObjects();
+		-- print("bcGravity.itsTheLaw: # of entities: "..tostring(moving:size()));
 		for i = moving:size(),1,-1 do
 			local ent = moving:get(i-1);
 			if ent then
+				-- print("bcGravity.itsTheLaw: Found entity: "..tostring(ent));
 				local hits = 2+ZombRand(3);
 				local hploss = 15 + ZombRand(15);
 				for i=0,hits do
@@ -278,23 +307,50 @@ bcGravity.checkSquare = function(x, y, z, force)--{{{
 end
 --}}}
 
-bcGravity.OnTileRemoved = function(obj) -- {{{
+bcGravity.ReceiveFromServer = function(_module, _command, _args) -- {{{
+	-- print("bcGravity.ReceiveFromServer: "..tostring(_module)..", "..tostring(_command)..", "..tostring(_args));
+
+	if _module ~= 'bcGravity' then return end
+
+	local sq = getCell():getGridSquare(_args.x, _args.y, _args.z);
+	if not sq then return end
+	local objs = sq:getObjects();
+
+	for i = objs:size(),1,-1 do
+		local item = objs:get(i-1);
+		local id = -1;
+		if instanceof(item, "InventoryItem") then
+			id = item:getID();
+			item = item:getWorldItem();
+		end
+		if item then
+			sq:RemoveTileObject(item);
+			if _command == 'dropItemsDown' then
+				sq:getWorldObjects():remove(item);
+				sq:getSpecialObjects():remove(item);
+				sq:getObjects():remove(item);
+			end
+			if _command == 'dropStaticMovingItemsDown' then
+				sq:getStaticMovingObjects():remove(item);
+			end
+		end
+	end
+	sq:getCell():render();
+end -- }}}
+
+bcGravity.ReceiveFromClient = function(_module, _command, _player, _args) -- {{{
+	-- print("bcGravity.ReceiveFromClient: "..tostring(_module)..", "..tostring(_command)..", "..tostring(_player)..", "..tostring(_args));
+
+	if _module ~= 'bcGravity' then return end
+	if _command ~= 'OnTileRemoved' then return end
+
+	local sq = getCell():getGridSquare(_args.x, _args.y, _args.z);
 	if bcGravity.preventLoop then return end
 	bcGravity.preventLoop = true;
 
-	local sq = obj:getSquare();
-	if not sq then
-		print("error: obj:getSquare() is nil!");
-		bcGravity.preventLoop = false;
-		return;
-	end
-
-	local props = obj:getSprite():getProperties();
-	local hadWall = props:Is(IsoFlagType.cutN) or props:Is(IsoFlagType.cutW) or props:Is("WallW") or props:Is("WallN") or props:Is("WallNW");
-
 	bcGravity.squares = {};
 
-	if hadWall and sq:getZ() < 7 then
+	if _args.hadWall and sq:getZ() < 7 then
 		for x=sq:getX()-bcGravity.radius,sq:getX()+bcGravity.radius do
 			for y=sq:getY()-bcGravity.radius,sq:getY()+bcGravity.radius do
 				bcGravity.checkSquare(x, y, sq:getZ()+1);
@@ -309,10 +365,70 @@ bcGravity.OnTileRemoved = function(obj) -- {{{
 	end
 
 	bcGravity.obeyGravity();
-	
+
+	bcGravity.preventLoop = false;
+end -- }}}
+
+bcGravity.OnTileRemoved = function(obj) -- {{{
+	if bcGravity.preventLoop then return end
+	bcGravity.preventLoop = true;
+
+	local sq = obj:getSquare();
+	if not sq then
+		print("error: obj:getSquare() is nil!");
+		bcGravity.preventLoop = false;
+		return;
+	end
+
+	local props = obj:getSprite():getProperties();
+	local hadWall = props:Is(IsoFlagType.cutN) or props:Is(IsoFlagType.cutW) or props:Is("WallW") or props:Is("WallN") or props:Is("WallNW");
+
+	local args = {}
+	args.x = sq:getX();
+	args.y = sq:getY();
+	args.z = sq:getZ();
+	args.hadWall = hadWall;
+
+	if isClient() then
+		-- print("Sending client command bcGravity.OnTileRemoved");
+		sendClientCommand('bcGravity', 'OnTileRemoved', args);
+	elseif (not isClient()) and (not isServer()) then
+		-- TODO XXX
+		bcGravity.squares = {};
+
+		if hadWall and sq:getZ() < 7 then
+			for x=sq:getX()-bcGravity.radius,sq:getX()+bcGravity.radius do
+				for y=sq:getY()-bcGravity.radius,sq:getY()+bcGravity.radius do
+					bcGravity.checkSquare(x, y, sq:getZ()+1);
+				end
+			end
+		end
+
+		for x=sq:getX()-bcGravity.radius,sq:getX()+bcGravity.radius do
+			for y=sq:getY()-bcGravity.radius,sq:getY()+bcGravity.radius do
+				bcGravity.checkSquare(x, y, sq:getZ());
+			end
+		end
+
+		bcGravity.obeyGravity();
+	end
 	bcGravity.preventLoop = false;
 end
 -- }}}
 
-triggerEvent("OnTileRemoved", {});
-Events.OnTileRemoved.Add(bcGravity.OnTileRemoved);
+bcGravity.initClient = function()
+	-- print("bcGravity: creating OnTileRemoved");
+	triggerEvent("OnTileRemoved", {});
+	Events.OnTileRemoved.Add(bcGravity.OnTileRemoved);
+	Events.OnServerCommand.Add(bcGravity.ReceiveFromServer);
+end
+
+Events.OnGameStart.Add(bcGravity.initClient);
+
+bcGravity.initServer = function()
+	-- print("bcGravity.initServer START");
+	Events.OnClientCommand.Add(bcGravity.ReceiveFromClient);
+	-- print("bcGravity.initServer END");
+end
+
+Events.OnServerStarted.Add(bcGravity.initServer)
