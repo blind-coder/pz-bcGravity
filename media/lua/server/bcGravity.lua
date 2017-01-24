@@ -307,7 +307,7 @@ bcGravity.checkSquare = function(x, y, z, force)--{{{
 end
 --}}}
 
-bcGravity.ReceiveFromServer = function(_module, _command, _args)
+bcGravity.ReceiveFromServer = function(_module, _command, _args) -- {{{
 	-- print("bcGravity.ReceiveFromServer: "..tostring(_module)..", "..tostring(_command)..", "..tostring(_args));
 
 	if _module ~= 'bcGravity' then return end
@@ -336,9 +336,9 @@ bcGravity.ReceiveFromServer = function(_module, _command, _args)
 		end
 	end
 	sq:getCell():render();
-end
+end -- }}}
 
-bcGravity.ReceiveFromClient = function(_module, _command, _player, _args)
+bcGravity.ReceiveFromClient = function(_module, _command, _player, _args) -- {{{
 	-- print("bcGravity.ReceiveFromClient: "..tostring(_module)..", "..tostring(_command)..", "..tostring(_player)..", "..tostring(_args));
 
 	if _module ~= 'bcGravity' then return end
@@ -367,7 +367,7 @@ bcGravity.ReceiveFromClient = function(_module, _command, _player, _args)
 	bcGravity.obeyGravity();
 
 	bcGravity.preventLoop = false;
-end
+end -- }}}
 
 bcGravity.OnTileRemoved = function(obj) -- {{{
 	if bcGravity.preventLoop then return end
@@ -389,17 +389,41 @@ bcGravity.OnTileRemoved = function(obj) -- {{{
 	args.z = sq:getZ();
 	args.hadWall = hadWall;
 
-	-- print("Sending client command bcGravity.OnTileRemoved");
-	sendClientCommand('bcGravity', 'OnTileRemoved', args);
+	if isClient() then
+		-- print("Sending client command bcGravity.OnTileRemoved");
+		sendClientCommand('bcGravity', 'OnTileRemoved', args);
+	elseif (not isClient()) and (not isServer()) then
+		-- TODO XXX
+		bcGravity.squares = {};
+
+		if hadWall and sq:getZ() < 7 then
+			for x=sq:getX()-bcGravity.radius,sq:getX()+bcGravity.radius do
+				for y=sq:getY()-bcGravity.radius,sq:getY()+bcGravity.radius do
+					bcGravity.checkSquare(x, y, sq:getZ()+1);
+				end
+			end
+		end
+
+		for x=sq:getX()-bcGravity.radius,sq:getX()+bcGravity.radius do
+			for y=sq:getY()-bcGravity.radius,sq:getY()+bcGravity.radius do
+				bcGravity.checkSquare(x, y, sq:getZ());
+			end
+		end
+
+		bcGravity.obeyGravity();
+	end
 	bcGravity.preventLoop = false;
 end
 -- }}}
 
-if isClient() then
+bcGravity.initClient = function()
+	-- print("bcGravity: creating OnTileRemoved");
 	triggerEvent("OnTileRemoved", {});
 	Events.OnTileRemoved.Add(bcGravity.OnTileRemoved);
 	Events.OnServerCommand.Add(bcGravity.ReceiveFromServer);
 end
+
+Events.OnGameStart.Add(bcGravity.initClient);
 
 bcGravity.initServer = function()
 	-- print("bcGravity.initServer START");
