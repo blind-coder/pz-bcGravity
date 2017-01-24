@@ -140,7 +140,7 @@ end
 --}}}
 
 bcGravity.dropItemsDown = function(sq, item)--{{{
-	print("bcGravity.dropItemsDown: dropping on "..sq:getX().."x"..sq:getY().."x"..sq:getZ());
+	-- print("bcGravity.dropItemsDown: dropping on "..sq:getX().."x"..sq:getY().."x"..sq:getZ());
 	local id = -1;
 	if instanceof(item, "InventoryItem") then
 		id = item:getID();
@@ -158,7 +158,7 @@ bcGravity.dropItemsDown = function(sq, item)--{{{
 		if nz == 0 or (nsq and nsq:getFloor()) then
 			nsq:AddWorldInventoryItem(item:getItem(), 0.0 , 0.0, 0.0);
 			item:transmitCompleteItemToClients();
-			print("bcGravity.dropItemsDown: dropped "..tostring(item).." to level "..tostring(nz));
+			-- print("bcGravity.dropItemsDown: dropped "..tostring(item).." to level "..tostring(nz));
 			return;
 		end
 	end
@@ -228,9 +228,11 @@ bcGravity.itsTheLaw = function(_x, _y, _z)--{{{
 		local moving = getCell():getGridSquare(_x, _y, _z-1);
 		if not moving then return end
 		moving = moving:getMovingObjects();
+		-- print("bcGravity.itsTheLaw: # of entities: "..tostring(moving:size()));
 		for i = moving:size(),1,-1 do
 			local ent = moving:get(i-1);
 			if ent then
+				-- print("bcGravity.itsTheLaw: Found entity: "..tostring(ent));
 				local hits = 2+ZombRand(3);
 				local hploss = 15 + ZombRand(15);
 				for i=0,hits do
@@ -306,7 +308,7 @@ end
 --}}}
 
 bcGravity.ReceiveFromServer = function(_module, _command, _args)
-	print("bcGravity.ReceiveFromClient: "..tostring(_module)..", "..tostring(_command)..", "..tostring(_args));
+	-- print("bcGravity.ReceiveFromServer: "..tostring(_module)..", "..tostring(_command)..", "..tostring(_args));
 
 	if _module ~= 'bcGravity' then return end
 
@@ -314,39 +316,30 @@ bcGravity.ReceiveFromServer = function(_module, _command, _args)
 	if not sq then return end
 	local objs = sq:getObjects();
 
-	if _command == 'dropItemsDown' then
-		for i = objs:size(),1,-1 do
-			local item = objs:get(i-1);
-			local id = -1;
-			if instanceof(item, "InventoryItem") then
-				id = item:getID();
-				item = item:getWorldItem();
-			end
-			if not item then return end;
+	for i = objs:size(),1,-1 do
+		local item = objs:get(i-1);
+		local id = -1;
+		if instanceof(item, "InventoryItem") then
+			id = item:getID();
+			item = item:getWorldItem();
+		end
+		if item then
 			sq:RemoveTileObject(item);
-			sq:getWorldObjects():remove(item);
-			sq:getSpecialObjects():remove(item);
-			sq:getObjects():remove(item);
+			if _command == 'dropItemsDown' then
+				sq:getWorldObjects():remove(item);
+				sq:getSpecialObjects():remove(item);
+				sq:getObjects():remove(item);
+			end
+			if _command == 'dropStaticMovingItemsDown' then
+				sq:getStaticMovingObjects():remove(item);
+			end
 		end
 	end
-	if _command == 'dropStaticMovingItemsDown' then
-		for i = objs:size(),1,-1 do
-			local item = objs:get(i-1);
-			local id = -1;
-			if instanceof(item, "InventoryItem") then
-				id = item:getID();
-				item = item:getWorldItem();
-			end
-			if not item then return end;
-			sq:RemoveTileObject(item);
-			sq:getStaticMovingObjects():remove(item);
-			sq:getCell():render();
-		end
-	end
+	sq:getCell():render();
 end
 
 bcGravity.ReceiveFromClient = function(_module, _command, _player, _args)
-	print("bcGravity.ReceiveFromClient: "..tostring(_module)..", "..tostring(_command)..", "..tostring(_player)..", "..tostring(_args));
+	-- print("bcGravity.ReceiveFromClient: "..tostring(_module)..", "..tostring(_command)..", "..tostring(_player)..", "..tostring(_args));
 
 	if _module ~= 'bcGravity' then return end
 	if _command ~= 'OnTileRemoved' then return end
@@ -396,7 +389,7 @@ bcGravity.OnTileRemoved = function(obj) -- {{{
 	args.z = sq:getZ();
 	args.hadWall = hadWall;
 
-	print("Sending client command bcGravity.OnTileRemoved");
+	-- print("Sending client command bcGravity.OnTileRemoved");
 	sendClientCommand('bcGravity', 'OnTileRemoved', args);
 	bcGravity.preventLoop = false;
 end
@@ -409,9 +402,9 @@ if isClient() then
 end
 
 bcGravity.initServer = function()
-	print("bcGravity.initServer START");
+	-- print("bcGravity.initServer START");
 	Events.OnClientCommand.Add(bcGravity.ReceiveFromClient);
-	print("bcGravity.initServer END");
+	-- print("bcGravity.initServer END");
 end
 
 Events.OnServerStarted.Add(bcGravity.initServer)
