@@ -377,6 +377,8 @@ bcGravity.ReceiveFromClient = function(_module, _command, _player, _args) -- {{{
 	if _command ~= 'OnTileRemoved' then return end
 
 	local sq = getCell():getGridSquare(_args.x, _args.y, _args.z);
+	if not sq then return end;
+
 	if bcGravity.preventLoop then return end
 	bcGravity.preventLoop = true;
 
@@ -412,7 +414,9 @@ bcGravity.OnTileRemoved = function(obj) -- {{{
 		return;
 	end
 
-	local props = obj:getSprite():getProperties();
+	local sprite = obj:getSprite();
+	if not sprite then return end;
+	local props = sprite:getProperties();
 	local hadWall = props:Is(IsoFlagType.cutN) or props:Is(IsoFlagType.cutW) or props:Is("WallW") or props:Is("WallN") or props:Is("WallNW");
 
 	local args = {}
