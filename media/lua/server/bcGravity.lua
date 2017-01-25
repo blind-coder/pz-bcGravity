@@ -1,11 +1,43 @@
 -- require "TimedActions/ISDestroyStuffAction.lua"
 require "BuildingObjects/ISWoodenFloor.lua"
+require "BuildingObjects/ISWoodenStairs.lua"
 require "bcUtils"
 
 bcGravity = {};
 bcGravity.radius = 2;
 bcGravity.preventLoop = false;
 bcGravity.squares = {};
+
+bcGravity.ISWSSetInfo = ISWoodenStairs.setInfo; -- {{{
+ISWoodenStairs.setInfo = function(self, square, level, north, sprite, luaobject)
+	bcGravity.ISWSSetInfo(self, square, level, north, sprite, luaobject);
+	local _x = square:getX();
+	local _y = square:getY();
+	local _z = square:getZ();
+	local xb = _x;
+	local yb = _y;
+
+	-- might be a pretty broad check, but this should really be in Java...
+	for xb=_x-2,_x+2 do
+		for yb=_y-2,_y+2 do
+			for _z = square:getZ(),0,-1 do
+				local sq = getCell():getGridSquare(xb, yb ,_z);
+				if sq then
+					for i = sq:getObjects():size(),1,-1 do
+						local obj = sq:getObjects():get(i-1);
+						local sprite = obj:getSprite();
+						if sprite then
+							local name = sprite:getName();
+							if name == self.pillar or name == self.pillarNorth or name == self.sprite3 or name == self.northSprite3 then
+								sprite:getProperties():Set(IsoFlagType.cutN);
+							end
+						end
+					end
+				end
+			end
+		end
+	end
+end -- }}}
 
 bcGravity.ISWFisValid = ISWoodenFloor.isValid; -- {{{
 ISWoodenFloor.isValid = function(self, square)
